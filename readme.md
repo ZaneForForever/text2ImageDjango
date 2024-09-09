@@ -51,7 +51,7 @@ To generate images or sound from text, navigate to the respective endpoints via 
 Contributions, issues, and feature requests are welcome! Feel free to check Issues page if you want to contribute.
 
 #### License
-Distributed under the MIT License. See LICENSE for more information.
+Distributed under the Apache-2.0  License. See LICENSE for more information.
 
 #### Contact
 For any queries, please open an issue or contact Your Email.
