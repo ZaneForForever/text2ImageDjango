@@ -1,0 +1,289 @@
+{% extends "base/ai_base.html" %} {% block content %}
+<!-- 这里可以编写自定义的 HTML 标记 -->
+<div id="main">
+  <el-text class="mx-1" size="large" style="padding-left: 10px"
+    >AI图片生成</el-text
+  >
+
+  <el-alert
+    title="采用stable-diffusion-v2-2-2"
+    type="success"
+    style="padding-top: 10px; padding-bottom: 10px"
+  >
+  </el-alert>
+
+  <textarea id="editor" style="width: 100%; height: 500px" hidden>
+        {{ data }}</textarea
+  >
+  {% verbatim %}
+
+  <el-text v-if="info.amount" class="mx-1"   style="padding-left: 10px"
+  >账户余额:{{ info.amount}}</el-text
+>
+
+  <div v-loading="loading" style="padding: 10px">
+    <div>
+      <el-input
+        v-model="info.text"
+        :rows="4"
+        type="textarea"
+        placeholder="请输入需求,使用英文,用逗号隔开譬如( a running dog,red car,blue sky)"
+      />
+    </div>
+    <div>
+      <el-button @click="sdText2Image">SD生成图片</el-button>
+      <el-button @click="defaultText2Image">MJ生成图片</el-button>
+      <el-button @click="image2image">图生图</el-button>
+
+    </div>
+   <div>
+ 
+
+    <el-text class="mx-1" size="large" style="padding-left: 10px"
+    >参考图</el-text
+  >
+
+    <div v-if="current_img_url">
+
+      <img  :src="current_img_url" style="width:500px" />
+
+      <el-input
+      v-model="current_img_url"
+      :rows="2"
+      type="textarea"/>
+    </div>
+
+    
+
+    <el-upload
+    with-credentials
+    :on-success="onFileUploadSuccess"
+    v-model:file-list="info.attachments"
+    drag
+    :action="uploadImageUrl"
+  >
+    <div class="el-upload__text">
+      将文件拖拽到这里上传 <em>或者点击选择上传</em>
+    </div>
+    <template #tip>
+      <div class="el-upload__tip">单个文件大小必须小于50MB</div>
+    </template>
+  </el-upload>
+
+   </div>
+
+  
+
+   <el-button @click="clearImages" type="danger">清除图片</el-button>
+
+  
+
+    </div>
+    {% endverbatim %}
+
+    <div v-if="images"  >
+
+      <el-image v-for="i in images"  :src="i" fit="fill" />
+    </div>
+
+  </div>
+
+ 
+</div>
+
+
+
+<script type="module">
+  //const data = JSON.parse(document.getElementById("editor").value);
+
+  import CxHttpPost from "/static/js/cx.js";
+
+  function isChinese(s){
+    let reg = new RegExp("[\\u4E00-\\u9FFF]+","g")
+    if(reg.test(s)){
+      return true
+    }else{
+      return false
+      }
+  }
+
+  const data = {};
+
+  const config = {
+    el: "#main",
+    data() {
+      return {
+        info: data,
+        loading: false,
+        uploadImageUrl: "/ai/upload/image?session=8daff1903a590949cb83a2da5180147f",
+        current_img_url:null,
+        images: [],
+
+      };
+    },
+    methods: {
+
+      clearImages(){
+        this.images=[]
+      },
+      showSuccessMessage(msg) {
+        this.$message({
+          showClose: false,
+          message: msg,
+          type: "success",
+          duration: 3000,
+        });
+      },
+      showErrorMessage(msg) {
+        this.$message({
+          showClose: false,
+          message: msg,
+          type: "warning",
+          duration: 3000,
+        });
+      },
+      onFileUploadSuccess(response, file, fileList){
+        this.info.attachments=fileList
+        file.name = response["data"]["name"];
+        file.url = response["data"]["url"];
+        this.current_img_url=response["data"]["url"]
+
+      },
+      addImages(images){
+
+
+     
+
+        for (let i = 0; i < images.length; i++) {
+
+          this.images.push(images[i]);
+
+        }
+        this.images.reverse();
+
+      },
+
+      onCreateImageSuccess(resp){
+        let vueThis=this
+        console.log(resp);
+        vueThis.loading = false;
+        let jsonObj = JSON.parse(resp);
+
+        if (jsonObj.code != 0) {
+          vueThis.showErrorMessage(jsonObj.msg);
+          return;
+        }
+        vueThis.addImages(jsonObj.data.images);
+
+       // vueThis.info.amount = jsonObj.data.amount;
+
+        vueThis.showSuccessMessage("AI生成图片成功!");
+        vueThis.text=null
+      },
+      image2image:function(){
+        let vueThis = this;
+        if (vueThis.info.attachments.length==0){
+          this.showErrorMessage("请先上传图片")
+          return
+        }
+        if (vueThis.info.text==null){
+          this.showErrorMessage("请先填写需求")
+
+          return
+        }
+       
+
+        this.loading = true;
+        let postObj = {
+          prompt_text: vueThis.info.text,
+          attachments: vueThis.info.attachments,
+          source_image:vueThis.current_img_url,
+          session:"8daff1903a590949cb83a2da5180147f"
+        };
+        let url = "/ai/image2image";
+        let postData=JSON.stringify(postObj, null, "")
+          CxHttpPost(
+          url,
+          postData,
+          function (resp) {
+            vueThis.onCreateImageSuccess(resp)
+          },
+          function (code) {
+            vueThis.loading = false;
+            alert("error" + code);
+          }
+        );
+      },
+
+      sdText2Image:function(){
+
+          this.ttt(true)
+      },
+      defaultText2Image:function(){
+
+        this.ttt(false)
+    },
+      ttt: function (forceSDMode) {
+        let vueThis = this;
+
+        if (vueThis.info.text==null){
+          this.showErrorMessage("请先填写需求")
+
+          return
+        }
+        
+        console.log(this.info);
+        this.loading = true;
+        let postObj = {
+          prompt_text: vueThis.info.text,
+          session:"8daff1903a590949cb83a2da5180147f",
+          mj:!forceSDMode,
+
+        };
+        let url = "/ai/text2image";
+        let postData=JSON.stringify(postObj, null, "")
+
+        console.log(postData);
+        CxHttpPost(
+          url,
+          postData,
+          function (resp) {
+          
+
+           vueThis.onCreateImageSuccess(resp)
+          },
+          function (code) {
+            vueThis.loading = false;
+            alert("error" + code);
+          }
+        );
+      },
+    },
+
+    mounted() {},
+  };
+  const vueApp = Vue.createApp(config);
+
+  vueApp.use(ElementPlus, {
+    size: "large",
+  });
+  vueApp.mount("#main");
+</script>
+
+<style scoped>
+  .demo-image__lazy {
+    height: 400px;
+    overflow-y: auto;
+  }
+  .demo-image__lazy .el-image {
+    display: block;
+    min-height: 200px;
+    margin-bottom: 10px;
+  }
+  .demo-image__lazy .el-image:last-child {
+    margin-bottom: 0;
+  }
+ 
+  </style>
+
+{% endblock %}

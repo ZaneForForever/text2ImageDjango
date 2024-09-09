@@ -1,0 +1,527 @@
+<div id="descVue" class="fieldBox field-{{ field.field.name }}">
+
+
+    {{ field.label_tag }}
+
+
+    <div></div>
+
+    <div class="help" style="width: 600px">
+        <!-- data -->
+        <textarea id="descId" type="text" name="{{ field.field.name }}" hidden cols="100"
+                  rows="20"> {{ field.field.value }}</textarea>
+
+        <el-row :gutter="1" v-for="line,index in descs.lines">
+            <el-col :span="2">
+
+
+                <el-popover
+                        placement="right-start"
+                        title="选择"
+                        trigger="hover">
+                    <p>在这里插入一行</p>
+                    <div>
+                        {#                        <el-button size="primary" type="mini" @click="addLineTitle(index)" round>标题</el-button>#}
+
+                        <el-button type="success" size="mini" @click="addLineText(index)" round>段落</el-button>
+
+                        <el-button type="warning" size="mini" @click="addLineImages(index)" round>图片</el-button>
+
+                        <el-button type="info" size="mini" @click="addLineVideo(index)" round>视频</el-button>
+                    </div>
+                    <el-divider>更多</el-divider>
+
+                    <el-button type="danger" @click="deleteLine(index)" size="mini" round>删除此行</el-button>
+
+
+                    <el-button style="margin-top: 10px" slot="reference" plain type="info" size="mini"
+                               class="el-dropdown-link">
+                        {% verbatim %} {{ index+1 }} {% endverbatim %}
+                    </el-button>
+                </el-popover>
+
+
+            </el-col>
+            <el-col :span="22">
+
+                <div v-if="line.type === 'text'">
+
+                    <el-divider content-position="left">段落</el-divider>
+                    <textarea v-model="line.text" @change="onTextInputChange"
+                              type="text" style="width: 455px" rows="4">
+                              </textarea>
+
+                </div>
+
+                <div v-else-if="line.type === 'title'">
+                    <el-divider content-position="left">标题</el-divider>
+
+                    <input type="text" v-model="line.text" @change="onTextInputChange">
+
+
+                </div>
+                <div v-else-if="line.type === 'image'">
+                    <el-divider content-position="left">图片</el-divider>
+
+                    <div :span="20">
+                        <el-col :span="6" v-for="img,i in line.imgs" :span="20">
+                            <el-card :body-style="{ padding: '0px' }">
+                                <el-image class="image" style="width: 150px; "
+                                          :src="img.src" :preview-src-list="[img.src]">
+                                </el-image>
+                                <div>
+                                    <el-input-number size="small" v-model="img.col" @change="refreshJson" :min="1"
+                                                     :max="12"
+                                                     label="col"></el-input-number>
+                                </div>
+                            </el-card>
+
+
+                        </el-col>
+                    </div>
+                    <div :span="2">
+                        <el-button @click="uploadImage(index)">上传图片</el-button>
+                        <input hidden :index="index" @change="onImgInputChange" type="file" accept="image/*"
+                               :id="'imgInputId'+index">
+                    </div>
+                </div>
+                <div v-else-if="line.type === 'video'">
+                    <el-divider content-position="left">视频</el-divider>
+
+                    <el-row :span="8">
+                        <el-col :span="8">
+                            <el-tag type="success">封面</el-tag>
+                            <el-image :span="8" class="image" :src="line.video_img"></el-image>
+                            <el-button type="success" @click="uploadVideoImg(index)">上传封面</el-button>
+                            <input hidden @change="onVideoImgInputChange" type="file" accept="image/*"
+                                   :id="'videoImgInput'+index" :index="index">
+
+                        </el-col>
+
+                        <el-col :span="8">
+                            <el-tag type="success">视频</el-tag>
+                            <video controls loop style="max-width: 200px"
+                                   :src="line.video_url"></video>
+                            <el-button type="success" @click="uploadVideo(index)">上传视频</el-button>
+                            <input hidden @change="onVideoInputChange" type="file" accept="video/*"
+                                   :id="'videoInput'+index"
+                                   :index="index">
+                        </el-col>
+
+                    </el-row>
+                </div>
+                <div v-else>
+
+                    <p>有错误的数据</p>
+
+                </div>
+            </el-col>
+        </el-row>
+
+
+        <el-divider>更多</el-divider>
+        <div>
+            <el-button type="primary" size="medium" @click="drawer = true" icon="el-icon-mobile-phone" round>查看预览
+            </el-button>
+
+
+        </div>
+    </div>
+
+
+    <el-drawer
+            title="内容预览(用于检查内容是否正确，实际效果以真机为准)"
+            :size="1000"
+            :open="onDrawerOpen"
+            :visible.sync="drawer"
+    >
+
+
+        <div style="padding: 20px">
+            <h1>内容列表</h1>
+
+            <li v-for="line in descs.controls" style="padding-left: 30px;padding-right: 30px">
+
+
+                <div style="font-size: 14px!important;" v-if="line.property.control=='Table'">
+
+                    <div>
+                        {% verbatim %}<i
+                            class="el-icon-caret-right">{{ line.property.title[0].text }} </i>{% endverbatim %}
+                    </div>
+
+                    <div style="padding-left: 100px" v-for="line in line.config.table.children">
+
+
+                        <div v-if="line.property.control=='Table'" style="font-size: 18px!important;">
+
+                            <div>
+                                {% verbatim %}<i
+                                    class="el-icon-caret-right">{{ line.property.title[0].text }} </i>{% endverbatim %}
+                            </div>
+
+                            <input type="text" :value="line.property.id">
+                            附加信息
+                            <input type="text" v-model="line.extra_info" style="width: 500px">
+                        </div>
+
+
+                        <div v-else>
+
+
+                            <div>
+                                {% verbatim %}<i
+                                    class="el-icon-caret-right">{{ line.property.title[0].text }} </i>{% endverbatim %}
+                            </div>
+
+                            <input type="text" :value="line.property.id">
+                            附加信息
+                            <input type="text" v-model="line.extra_info" style="width: 500px">
+                        </div>
+
+                    </div>
+                </div>
+
+
+                <div v-else>
+
+
+                    <div>
+                        {% verbatim %}<i
+                            class="el-icon-caret-right">{{ line.property.title[0].text }} </i>{% endverbatim %}
+                    </div>
+
+                    <input type="text" :value="line.property.id">
+                    附加信息
+                    <input type="text" v-model="line.extra_info" style="width: 500px">
+                </div>
+            </li>
+
+            </ul>
+
+            <li style="height: 50px"></li>
+
+        </div>
+        <el-button style="margin-left: 20px" size="mini" type="info" @click="showDescContentDrawer = true">查看数据
+        </el-button>
+        <el-button style="margin-left: 20px" size="mini" type="primary" @click="create_py_code">重新生成代码
+        </el-button>
+    </el-drawer>
+
+    <el-drawer
+            title="内容数据"
+            :size="500"
+            direction="ltr"
+            :visible.sync="showDescContentDrawer"
+    >
+
+        <div style="padding: 20px;height: 600px">
+            <li style="height: 80px"></li>
+
+            <span>{% verbatim %}  {{ descs }}  {% endverbatim %}</span>
+
+
+        </div>
+    </el-drawer>
+
+    <el-dialog title="请粘贴或者输入邮件内容数据"
+               :visible.sync="dialogImportVisible">
+
+        <textarea id="importContentTextarea" cols="80" rows="30">
+
+
+        </textarea>
+
+
+        <div slot="footer" class="dialog-footer">
+            <el-button @click="dialogImportVisible = false">取 消</el-button>
+            <el-button type="primary" @click="importContent">确 定</el-button>
+        </div>
+    </el-dialog>
+
+</div>
+
+
+
+
+
+
+{% block script %}
+    <script type="text/javascript">
+        function CxHttpPost(url, body, callback, failedCallback) {
+            let httpRequest = new XMLHttpRequest();//第一步：创建需要的对象
+            httpRequest.open('POST', url, true); //第二步：打开连接
+            httpRequest.send(body);//发送请求 将情头体写在send中
+            /**
+             * 获取数据后的处理程序
+             */
+            httpRequest.onreadystatechange = function () {//请求后的回调接口，可将请求成功后要执行的程序写在其中
+                if (httpRequest.readyState == 4) {
+                    if (httpRequest.status == 200) {//验证请求是否发送成功
+                        let json = httpRequest.responseText;//获取到服务端返回的数据
+                        callback(json)
+                    } else {
+                        failedCallback(httpRequest.status)
+                    }
+                }
+
+            };
+        }
+
+        //document.getElementById("drawer-bg").style="background: '/static/admin/bg/phone.png'";
+        let c = document.getElementById("descId").textContent;
+        // 预处理一下
+        if (c == null || c.length === 0 || '' === c || c.trim() == "None") {
+            c = JSON.stringify({
+                max_col: 12,
+                lines: []
+            });
+        }
+        {#console.log(">>>>>")#}
+        {#console.log(c)#}
+
+
+        document.getElementById("descId").textContent = JSON.stringify(JSON.parse(c), null, " ")
+
+        let descData = JSON.parse(document.getElementById("descId").textContent);
+
+        let linesData = descData.lines;
+        let isNew = linesData != null && linesData.length > 0;
+        console.log(descData)
+        let descV = new Vue({
+            el: "#descVue",
+            created() {
+
+
+            },
+            data() {
+                let vueThis = this;
+
+                //descData=[]
+                return {
+                    counter: 1,
+                    rows: [],
+                    rawString: "xxx",
+                    descs: descData,
+                    drawer: true,
+                    showContent: false,
+                    showDescContentDrawer: false,
+                    dialogImportVisible: false,
+                    importContentString: "",
+                }
+            },
+
+            methods: {
+                onDrawerOpen() {
+                    console.log("抽屉打开")
+                },
+                create_py_code() {
+                    let re = window.location.href.match(/\d+/g)
+                    let template_id = re[re.length - 1]
+                    let data = JSON.stringify(this.descs, null, "")
+                    CxHttpPost("/offical/auto/create/model?template_id=" + template_id, data, function (resp) {
+                        //   console.log(resp)
+                        window.location.reload()
+                    }, function () {
+                    })
+                },
+                copyContent() {
+                    let content = JSON.stringify(this.descs);
+
+                    let copyDom = document.createElement('div');
+                    copyDom.innerText = content;
+                    copyDom.style.position = 'absolute';
+                    copyDom.style.top = '0px';
+                    copyDom.style.right = '-9999px';
+                    document.body.appendChild(copyDom);
+                    //创建选中范围
+                    var range = document.createRange();
+                    range.selectNode(copyDom);
+                    //移除剪切板中内容
+                    window.getSelection().removeAllRanges();
+                    //添加新的内容到剪切板
+                    window.getSelection().addRange(range);
+                    //复制
+                    var successful = document.execCommand('copy');
+                    copyDom.parentNode.removeChild(copyDom);
+                    if (successful) {
+                        this.$message({
+                            showClose: true,
+                            message: '复制成功！成功将内容数据复制到剪贴板',
+                            type: 'success'
+                        });
+                    } else {
+                        this.$message({
+                            showClose: true,
+                            message: '复制失败，请检查浏览器兼容性',
+                            type: 'error'
+                        });
+                    }
+
+
+                },
+                importContent() {
+                    this.dialogImportVisible = false
+                    let content = document.getElementById("importContentTextarea").value
+                    {#console.log(content)#}
+                    this.descs = JSON.parse(content)
+                    document.getElementById("importContentTextarea").value = ""
+                },
+                addLineTitle(index) {
+
+                    let data = {
+                        type: "title",
+                        text: "请输入标题",
+
+                    }
+                    this.descs.lines.splice(index, 0, data)
+                    //this.descs.lines.push(data);
+                },
+                addLineText(index) {
+                    let data = {
+                        type: "text",
+                        text: "请输入内容",
+
+                    }
+                    this.descs.lines.splice(index, 0, data)
+                },
+                addLineImages(index) {
+                    let data = {
+                        type: "image",
+                        imgs: [],
+
+                    }
+                    this.descs.lines.splice(index, 0, data)
+                },
+                addLineVideo(index) {
+                    let data = {
+                        type: "video",
+                        video_url: "",
+                        video_img: "",
+
+                    }
+                    this.descs.lines.splice(index, 0, data)
+                },
+
+
+                uploadImage(index) {
+                    let l = document.getElementById("imgInputId" + index)
+                    l.click()
+
+                },
+
+                uploadVideo(index) {
+                    let l = document.getElementById("videoInput" + index)
+                    l.click()
+                },
+
+                uploadVideoImg(index) {
+                    let l = document.getElementById("videoImgInput" + index)
+                    l.click()
+                },
+
+                onTextInputChange(event) {
+                    this.refreshJson();
+                },
+
+                refreshJson() {
+                    document.getElementById("descId").textContent = JSON.stringify(this.descs, null, " ")
+                },
+                onVideoImgInputChange(event) {
+                    let vueThis = this;
+                    let index = event.target.getAttribute("index")
+                    let f = event.target.files[0];
+
+                    vueThis.ajaxUploadMedia(f, function (url) {
+
+                        vueThis.descs.lines[index]['video_img'] = url;
+                        vueThis.refreshJson()
+                    })
+                },
+                onVideoInputChange(event) {
+                    let vueThis = this;
+                    let index = event.target.getAttribute("index")
+                    let f = event.target.files[0];
+
+                    vueThis.ajaxUploadMedia(f, function (url) {
+                        vueThis.descs.lines[index]['video_url'] = url;
+                        vueThis.refreshJson()
+                    })
+                },
+                onImgInputChange(event) {
+                    let vueThis = this;
+
+                    console.log("改变" + event.target)
+                    let imgInput = event.target
+
+                    let index = imgInput.getAttribute("index")
+
+                    let f = imgInput.files[0];
+
+                    vueThis.ajaxUploadMedia(f, function (url) {
+                        // 可以清除上次上传的，不然同一张图片change事件不会触发
+                        event.target.value = ""
+
+                        let one_img = {
+                            col: 3,
+                            src: url
+                        }
+                        vueThis.descs.lines[index].imgs.push(one_img)
+
+                        vueThis.refreshJson()
+
+
+                    })
+
+
+                },
+
+
+                ajaxUploadMedia(fileContent, callback) {
+                    let xhr = new XMLHttpRequest();
+                    xhr.onreadystatechange = function () {
+                        if (xhr.readyState === 4) {
+                            if (xhr.status === 200) {
+                                console.log('上传成功，响应的文本内容为' + xhr.responseText);
+                                let obj = JSON.parse(xhr.responseText)
+                                let code = obj['code']
+                                if (code === 200) {
+                                    alert("上传出错，json code返回" + xhr.status);
+                                } else {
+                                    let url = obj['url']
+                                    callback(url)
+                                }
+
+
+                            } else {
+                                alert("服务器上传接口链接出错" + xhr.status);
+                            }
+                        }
+                    }
+
+                    xhr.open('POST', '/app/upload', true);
+                    let formData = new FormData();
+                    formData.append("image", fileContent)
+                    formData.append("type", fileContent.type)
+                    formData.append("name", fileContent.name)
+                    xhr.send(formData)
+
+                },
+
+
+                deleteLine(index) {
+                    console.log("奇删除id:" + index)
+
+                    this.descs.lines.splice(index, 1)
+                    this.refreshJson();
+                }
+
+
+            }
+        })
+
+
+    </script>
+
+{% endblock %}
+

@@ -1,0 +1,93 @@
+{% load simpletags %}
+<div id="codeVue" class="fieldBox field-{{ field.field.name }}">
+
+
+    {{ field.label_tag }}
+
+
+    <el-button style="margin-left: 20px" size="large" type="success" @click="copyCode">复制以下代码
+    </el-button>
+
+    <textarea name="aa" id="codeTextarea" cols="30" rows="10" style="width: 0px;height: 0px;">
+
+    </textarea>
+    <div>
+
+        <pre>
+
+            <code id="contentDataId" style="overflow-x: auto;border: 1px solid black;"> {{ field.field.value }}</code>
+
+        </pre>
+    </div>
+
+
+</div>
+
+<script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', (event) => {
+        document.querySelectorAll('pre code').forEach((el) => {
+            hljs.highlightElement(el);
+        });
+    });
+
+
+    let contentData = document.getElementById("contentDataId").textContent;
+
+    document.getElementById("codeTextarea").textContent = contentData;
+
+    let codeVue = new Vue({
+        el: "#codeVue",
+        create() {
+
+        },
+        data() {
+            return {
+                codeContent: contentData,
+            }
+        },
+        methods: {
+
+            copyCode() {
+                console.log("开始复制代码")
+                let content = document.getElementById("codeTextarea").textContent = contentData;
+
+                let copyDom = document.createElement('div');
+                copyDom.innerText = content;
+                copyDom.style.position = 'absolute';
+                copyDom.style.top = '0px';
+                copyDom.style.right = '-9999px';
+                document.body.appendChild(copyDom);
+                //创建选中范围
+                var range = document.createRange();
+
+                range.selectNode(document.getElementById("codeTextarea"));
+                //移除剪切板中内容
+                window.getSelection().removeAllRanges();
+                //添加新的内容到剪切板
+                window.getSelection().addRange(range);
+                //复制
+                var successful = document.execCommand('copy');
+                copyDom.parentNode.removeChild(copyDom);
+
+
+                if (successful) {
+                    this.$message({
+                        showClose: true,
+                        message: '复制成功！成功将内容数据复制到剪贴板',
+                        type: 'success'
+                    });
+                } else {
+                    this.$message({
+                        showClose: true,
+                        message: '复制失败，请检查浏览器兼容性',
+                        type: 'error'
+                    });
+                }
+            }
+        }
+    });
+
+</script>
+
+
+</style>

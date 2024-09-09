@@ -1,0 +1,16 @@
+version: '3'
+
+services:
+ 
+  web:
+    image: 10.0.0.10:5000/aipy:latest
+    command: gunicorn -c gu_docker.py main.wsgi:application
+    environment:
+      - DJANGO_ONLINE=1
+    # volumes:
+      # - /data/logs:/data/logs
+      # - /data/www/aiDocker:/data/www/aiDocker
+    ports:
+      - "7004:80"
+    restart: unless-stopped
+    

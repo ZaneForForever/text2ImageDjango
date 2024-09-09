@@ -1,0 +1,81 @@
+{% comment %}
+<h1>{{ images }}</h1>
+
+{% endcomment %}
+
+<!-- Import style -->
+{% comment %}
+<link
+  rel="stylesheet"
+  href="//cdn.jsdelivr.net/npm/element-plus/dist/index.css"
+/>
+<!-- Import Vue 3 -->
+<script src="//cdn.jsdelivr.net/npm/vue@3"></script>
+<!-- Import component library -->
+<script src="//cdn.jsdelivr.net/npm/element-plus"></script>
+{% endcomment %}
+
+<div id="task{{ task.id }}" style="width: {{ width }}px">
+  {% for image in images %}
+  <img
+    src="{{ image.url }}"
+    width="{{ img_width }}px"
+    style="margin-top: 10px"
+    onclick="ccc(this)"
+    aaa="{{ image.big_url }}"
+  />
+
+  {% endfor %}
+  <style>
+
+    .zane-alert{
+
+      width: auto;
+      height: auto;
+      {% comment %} margin-left: -400px;
+      margin-top: -400px; {% endcomment %}
+    }
+  </style>
+  <script>
+    function show_pic(icon_url) {
+      let msg_html = `<img src="${icon_url}" width="auto" height="auto" style="max-height:1000px"/>`;
+      // $alert接收3个参数，data，title，options
+      // options使用案例可以参考https://element.eleme.cn/#/zh-CN/component/message-box#options
+      Vue.prototype.$alert(msg_html, "", {
+        title: "",
+        dangerouslyUseHTMLString: true,
+        customClass: "zane-alert",
+        closeOnClickModal: true,
+        showClose: false,
+        closeOnPressEscape: true,
+        center: true,
+        showConfirmButton: false,
+        showCancelButton: false,
+        callback: function (action, instance) {
+          // 点击确定按钮的回调
+          // action的值为'confirm'
+        },
+      });
+    }
+    function ccc(e) {
+      let url = e.getAttribute("aaa");
+
+      show_pic(url);
+    }
+  </script>
+  {% comment %}
+  <script>
+    Vue.createApp({
+      el: "#task{{ task.id }}",
+      data() {
+        return {};
+      },
+      methods: {},
+    })
+      .use(ElementPlus, {
+        size: "small",
+      })
+      .mount("#task{{ task.id }}");
+  </script>
+  {% endcomment %}
+</div>

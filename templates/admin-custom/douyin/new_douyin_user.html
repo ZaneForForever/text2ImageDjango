@@ -1,0 +1,49 @@
+<!-- 最新版本的 Bootstrap 核心 CSS 文件 -->
+
+{#<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css"#}
+{#      integrity="sha384-HSMxcRTRxnN+Bdg0JdbxYKrThecOKuH5zCYotlSAcp1+c8xmyTe9GYg1l9a69psu" crossorigin="anonymous">#}
+
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+
+
+
+{% block content %}
+    <div>
+
+
+        <div class="app-auth module">
+
+
+            <table>
+
+                <caption>
+                    <label class="section" title="4444">当前平台抖音用户总数<label class="text text-primary"
+                                                                              for="">{{ user_count }}</label> </label>
+                </caption>
+
+                <tbody>
+
+
+                <form style="width: 600px" action="" method="post"> {% csrf_token %}
+
+
+                    <tr class="model-user">
+                        {#                        <td><h3> 数量</h3></td>#}
+                        {#                        <td><input type="text" name="count"></td>#}
+
+                        <td><h3><input class="addlink" type="submit" value="重置所有机器人的阵容"></h3></td>
+
+
+                    </tr>
+
+                </form>
+
+
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+{% endblock %}
